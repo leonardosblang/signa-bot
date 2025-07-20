@@ -41,6 +41,11 @@
    pip install -r requirements.txt
    ```
 
+4. **Configurar crawl4ai** (após instalar requirements.txt)
+   ```bash
+   crawl4ai-setup
+   ```
+
 ## Configuração
 
 ### 1. Configurar Variáveis de Ambiente
@@ -74,16 +79,43 @@ CACHE_TTL=3600
 
 ## Executar o Chatbot
 
-### Windows (com Batch)
+### Opções Disponíveis
+
+#### 1. Interface Gráfica (Recomendado)
 ```bash
 run.bat
 ```
-Escolha opção 1 para executar
+Escolha opção 2 (Interface Web)
 
-### Execução Manual
+Ou execute diretamente:
+```bash
+python run_web.py
+```
+Aceda a http://localhost:8501
+
+#### 2. Interface de Linha de Comando (CLI)
+```bash
+run.bat
+```
+Escolha opção 1 (CLI)
+
+Ou execute diretamente:
 ```bash
 python main.py
 ```
+
+#### 3. Servidor API
+```bash
+run.bat
+```
+Escolha opção 3 (Servidor API)
+
+Ou execute diretamente:
+```bash
+python run_api.py
+```
+API disponível em http://localhost:8000
+Documentação em http://localhost:8000/docs
 
 ## Estrutura de Ficheiros Criados
 
@@ -114,19 +146,127 @@ Após a primeira execução:
   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
   ```
 
-## Docker (Opcional)
+## Docker - Multi-Interface
 
-Para usar com Docker:
+O Signa Chatbot oferece três interfaces diferentes via Docker com suporte completo para crawl4ai.
 
-1. **Construir imagem**
+### 1. Construir a Imagem
+```bash
+docker build -t signa-chatbot .
+```
+
+### 2. Opções de Execução
+
+#### Interface CLI (Interativa)
+```bash
+# Execução simples
+docker run -it --env-file .env signa-chatbot cli
+
+# Com docker-compose
+docker-compose --profile cli up signa-cli
+```
+
+#### API REST (FastAPI)
+```bash
+# Execução simples
+docker run -p 8000:8000 --env-file .env signa-chatbot api
+
+# Com docker-compose (recomendado)
+docker-compose up signa-api
+```
+Acesso: http://localhost:8000  
+Documentação: http://localhost:8000/docs
+
+#### Interface Web (Streamlit)
+```bash
+# Execução simples
+docker run -p 8501:8501 --env-file .env signa-chatbot web
+
+# Com docker-compose (recomendado)
+docker-compose up signa-web
+```
+Acesso: http://localhost:8501
+
+#### Todos os Serviços
+```bash
+# API + Web Interface
+docker-compose up
+
+# Incluir CLI interativo
+docker-compose --profile cli up
+```
+
+### 3. Comandos Docker-Compose Úteis
+
+```bash
+# Verificar instalação crawl4ai
+docker-compose --profile setup up signa-setup
+
+# Ver logs de um serviço
+docker-compose logs signa-api
+
+# Reconstruir após mudanças
+docker-compose up --build
+
+# Parar todos os serviços
+docker-compose down
+
+# Limpar volumes (remove base de dados)
+docker-compose down -v
+```
+
+### 4. Variáveis de Ambiente Docker
+
+Crie ficheiro `.env` para Docker:
+```env
+# OpenAI (obrigatório)
+OPENAI_API_KEY=sua_chave_aqui
+OPENAI_MODEL=gpt-4o-mini
+
+# Configurações gerais
+DEBUG_MODE=False
+CRAWL_TIMEOUT=30
+MAX_RETRIES=3
+CACHE_ENABLED=True
+CACHE_TTL=3600
+
+# Configurações específicas crawl4ai
+CRAWL4AI_BROWSER_TYPE=chromium
+```
+
+### 5. Volumes Persistentes
+
+- `signa_knowledge`: Base de conhecimento partilhada
+- `signa_logs`: Logs dos serviços
+- `./knowledge_base.pkl`: Ficheiro local sincronizado
+
+### 6. Health Checks e Monitorização
+
+```bash
+# Verificar estado dos serviços
+docker-compose ps
+
+# Ver health status
+docker inspect signa-chatbot-api | grep Health
+
+# Logs em tempo real
+docker-compose logs -f signa-api
+```
+
+## Início Rápido
+
+Para começar a usar imediatamente:
+
+1. **Execute o instalador**:
    ```bash
-   docker build -t signa-chatbot .
+   run.bat
    ```
 
-2. **Executar container**
-   ```bash
-   docker run -it --env-file .env signa-chatbot
-   ```
+2. **Escolha opção 4** (Instalação limpa)
+
+3. **Após instalação, escolha opção 1** (Interface Web)
+
+4. **Aceda http://localhost:8501** no navegador
 
 ## Atualização
 

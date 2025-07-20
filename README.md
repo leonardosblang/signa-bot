@@ -11,7 +11,9 @@ Simplesmente execute:
 run.bat
 ```
 
-E escolha a opção 2 (Instalação limpa) na primeira vez.
+1. **Primeira vez**: Escolha opção 4 (Instalação limpa)
+2. **Após instalação**: Escolha opção 1 (Interface Web - Recomendado)
+3. **Aceda**: http://localhost:8501
 
 ### Manual
 

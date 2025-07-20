@@ -1,9 +1,82 @@
 version: '3.8'
 
 services:
-  signa-chatbot:
+  # Shared data volume service
+  signa-data:
+    image: busybox
+    volumes:
+      - signa_knowledge:/app/data
+      - signa_logs:/app/logs
+    command: ["sh", "-c", "chown -R 1000:1000 /app/data /app/logs"]
+
+  # API Backend Service
+  signa-api:
     build: .
-    container_name: signa-chatbot
+    container_name: signa-chatbot-api
+    command: ["/app/docker-entrypoint.sh", "api"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - DEBUG_MODE=${DEBUG_MODE:-False}
+      - CRAWL_TIMEOUT=${CRAWL_TIMEOUT:-30}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - CACHE_ENABLED=${CACHE_ENABLED:-True}
+      - CACHE_TTL=${CACHE_TTL:-3600}
+      - CRAWL4AI_BROWSER_TYPE=chromium
+    ports:
+      - "8000:8000"
+    volumes:
+      - signa_knowledge:/app/data
+      - signa_logs:/app/logs
+      - ./knowledge_base.pkl:/app/knowledge_base.pkl:rw
+    networks:
+      - signa-network
+    restart: unless-stopped
+    depends_on:
+      - signa-data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Web Interface Service
+  signa-web:
+    build: .
+    container_name: signa-chatbot-web
+    command: ["/app/docker-entrypoint.sh", "web"]
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - DEBUG_MODE=${DEBUG_MODE:-False}
+      - SIGNA_API_URL=http://signa-api:8000
+      - CRAWL_TIMEOUT=${CRAWL_TIMEOUT:-30}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - CACHE_ENABLED=${CACHE_ENABLED:-True}
+      - CACHE_TTL=${CACHE_TTL:-3600}
+    ports:
+      - "8501:8501"
+    volumes:
+      - signa_logs:/app/logs
+    networks:
+      - signa-network
+    depends_on:
+      signa-api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # CLI Service (interactive)
+  signa-cli:
+    build: .
+    container_name: signa-chatbot-cli
+    command: ["/app/docker-entrypoint.sh", "cli"]
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
@@ -12,7 +85,38 @@ services:
       - MAX_RETRIES=${MAX_RETRIES:-3}
       - CACHE_ENABLED=${CACHE_ENABLED:-True}
       - CACHE_TTL=${CACHE_TTL:-3600}
+      - CRAWL4AI_BROWSER_TYPE=chromium
     volumes:
-      - ./knowledge_base.pkl:/app/knowledge_base.pkl
+      - signa_knowledge:/app/data
+      - signa_logs:/app/logs
+      - ./knowledge_base.pkl:/app/knowledge_base.pkl:rw
+    networks:
+      - signa-network
     stdin_open: true
     tty: true
+    profiles: ["cli"]
+    depends_on:
+      - signa-data
+
+  # Setup/Test service
+  signa-setup:
+    build: .
+    container_name: signa-chatbot-setup
+    command: ["/app/docker-entrypoint.sh", "setup"]
+    environment:
+      - CRAWL4AI_BROWSER_TYPE=chromium
+    volumes:
+      - signa_logs:/app/logs
+    networks:
+      - signa-network
+    profiles: ["setup"]
+
+volumes:
+  signa_knowledge:
+    driver: local
+  signa_logs:
+    driver: local
+
+networks:
+  signa-network:
+    driver: bridge

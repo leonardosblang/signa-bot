@@ -14,15 +14,24 @@ Este documento descreve todas as bibliotecas Python utilizadas no projeto Signa 
   - Extração de intenções (produto, cor, categoria)
   - Processamento contextual de conversas
 
-### 2. BeautifulSoup4
-- **Versão**: 4.x
-- **Propósito**: Parsing e extração de dados HTML
+### 2. Crawl4AI
+- **Versão**: 0.7.x
+- **Propósito**: Web crawling inteligente com suporte a IA e browser automation
 - **Uso no projeto**:
-  - `infrastructure/adapters/simple_crawler_adapter.py`: Scraping do site Signa
-  - Extração de produtos, categorias e metadados
-  - Processamento de estruturas HTML complexas
+  - `infrastructure/adapters/crawler_adapter.py`: Scraping principal do site Signa
+  - `infrastructure/adapters/comprehensive_crawler.py`: Extração avançada de conteúdo
+  - Browser automation via Playwright para sites dinâmicos
+  - Extração inteligente de conteúdo com anti-detection
 
-### 3. aiohttp
+### 3. BeautifulSoup4
+- **Versão**: 4.x
+- **Propósito**: Parsing e extração de dados HTML (fallback)
+- **Uso no projeto**:
+  - `infrastructure/adapters/simple_crawler_adapter.py`: Scraping fallback
+  - Processamento de HTML estático
+  - Extração básica quando crawl4ai não está disponível
+
+### 4. aiohttp
 - **Versão**: 3.x
 - **Propósito**: Requisições HTTP assíncronas
 - **Uso no projeto**:
@@ -105,6 +114,50 @@ Este documento descreve todas as bibliotecas Python utilizadas no projeto Signa 
   - Crawling paralelo de múltiplas páginas
   - Respostas não-bloqueantes
 
+## Bibliotecas da Interface Gráfica
+
+### 13. Streamlit
+- **Versão**: 1.29.0+
+- **Propósito**: Framework para interfaces web interativas
+- **Uso no projeto**:
+  - `presentation/web/app.py`: Interface web principal
+  - Chat interface moderna
+  - Exibição de produtos e resultados
+  - Gestão de sessões de utilizador
+
+### 14. FastAPI
+- **Versão**: 0.104.0+
+- **Propósito**: Framework web moderno para APIs
+- **Uso no projeto**:
+  - `presentation/api/main.py`: Servidor backend
+  - Endpoints RESTful para comunicação
+  - Validação automática de dados
+  - Documentação automática (/docs)
+
+### 15. Uvicorn
+- **Versão**: 0.24.0+
+- **Propósito**: Servidor ASGI de alta performance
+- **Uso no projeto**:
+  - `run_api.py`: Servidor para FastAPI
+  - Suporte a WebSockets e HTTP/2
+  - Auto-reload em desenvolvimento
+
+### 16. httpx
+- **Versão**: 0.25.0+
+- **Propósito**: Cliente HTTP assíncrono
+- **Uso no projeto**:
+  - `presentation/web/app.py`: Comunicação Streamlit → API
+  - Requisições assíncronas para melhor performance
+  - Timeouts e retry configuráveis
+
+### 17. Pydantic
+- **Versão**: 2.5.0+
+- **Propósito**: Validação de dados e settings
+- **Uso no projeto**:
+  - `presentation/api/models.py`: Modelos de dados da API
+  - Validação automática de requests/responses
+  - Serialização JSON automática
+
 ## Dependências Opcionais
 
 ### crawl4ai (Opcional)
@@ -135,33 +188,52 @@ from tenacity import retry       # Retry logic
 ## Gestão de Dependências
 
 ### requirements.txt
-Todas as dependências são geridas através do ficheiro `requirements.txt`:
+Todas as dependências são organizadas por categoria:
 
 ```
-openai
-python-dotenv
-colorama
-aiohttp
-nest-asyncio
-beautifulsoup4
-lxml
-pydantic
-tenacity
-fuzzywuzzy
-python-Levenshtein
+# Core AI & Web Scraping
+openai>=1.50.0
+crawl4ai[all]>=0.7.0
+python-dotenv>=1.0.0
+aiohttp>=3.9.0
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+tenacity>=8.2.0
+
+# Data Processing & Matching
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.25.0
+pydantic>=2.5.0
+
+# CLI Interface
+colorama>=0.4.6
+
+# API Interface
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+httpx>=0.25.0
+
+# Web Interface
+streamlit>=1.29.0
+
+# Optional async support
+nest-asyncio>=1.6.0
 ```
 
 ### Instalação
 ```bash
 pip install -r requirements.txt
+crawl4ai-setup  # Configurar navegadores
 ```
 
 ## Considerações de Performance
 
-1. **aiohttp + asyncio**: Permite crawling paralelo eficiente
-2. **lxml**: Parser mais rápido que html.parser
-3. **python-Levenshtein**: Acelera fuzzy matching 4-10x
-4. **Caching**: Reduz chamadas à API OpenAI
+1. **crawl4ai + Playwright**: Browser automation eficiente com anti-detection
+2. **aiohttp + asyncio**: Permite crawling paralelo eficiente
+3. **lxml**: Parser mais rápido que html.parser
+4. **python-Levenshtein**: Acelera fuzzy matching 4-10x
+5. **Caching**: Reduz chamadas à API OpenAI
+6. **Multi-interface**: CLI, API e Web podem correr em paralelo
 
 ## Segurança
 
