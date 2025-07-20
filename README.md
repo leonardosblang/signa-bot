@@ -1,5 +1,7 @@
 # Signa Chatbot
 
+![Signa Chatbot](img/1.png)
+
 Chatbot inteligente para responder perguntas sobre a empresa Signa e seus produtos.
 
 ## Instalação Rápida
